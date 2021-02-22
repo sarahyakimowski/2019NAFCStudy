@@ -1,0 +1,76 @@
+---
+title: "Length"
+output: html_notebook
+---
+
+Growth parameter descriptions:
+After embryos were exposed to NAFCs, they were moved to outdoor mesocosms filled with clean lake water and raised in the mesocosms for 1 month. At the end of the month, larvae were removed, measured for wet mass (mg) and measured for length (mm) using photography and ImageJ. Larvae Condition factor was then calculated using Fulton's K formula (K= 100*(W/L^3)). 
+
+Random effects included in lmer model for growth parameters include:
+Section: Where mesocosms were located in outdoor setup (there were 3 sections labelled 1,2,3, see overview sheet for diagram)
+FishInMesoStart: Initial stocking density for individual mesocosms
+FishInMesoEnd: Density of fish in individual mesocosm at end of experiment 
+
+Loading data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+
+growthdata<-read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/aug21growthR.csv")
+growthdata$Rep<- as.factor(growthdata$Rep)
+growthdata$Section<- as.factor(growthdata$Section)
+growthdata
+```
+
+
+Checking assumptions for length lm analysis:
+
+```{r}
+lengthmodel<- lm(Length ~ Treatment, data= growthdata)
+plot(lengthmodel)
+plot(lengthmodel, 4)
+```
+I think Q-Q, residuals vs fitted, scale-location, and cook's distance on all points looks good, do not think data needs to be adjusted. 
+
+Using backwards stepwise regression to determing if random effects influence model:
+```{r}
+lengthmodel<- lmer(Length ~ Treatment + (Treatment|Rep) + (Treatment|Section)+ (Treatment|FishInMesoEnd)+ (Treatment|FishInMesoStart), data=growthdata)
+lengthmodel1<- lmer(Length ~ Treatment + (1|Rep) + (Treatment|Section)+ (Treatment|FishInMesoEnd)+ (Treatment|FishInMesoStart), data=growthdata)
+#notsignificant anova(lengthmodel, lengthmodel1)
+lengthmodel2<- lmer(Length ~ Treatment + (1|Rep) + (1|Section)+ (Treatment|FishInMesoEnd)+ (Treatment|FishInMesoStart), data=growthdata)
+#notsignificant anova(lengthmodel1, lengthmodel2)
+lengthmodel3<- lmer(Length ~ Treatment + (1|Rep) + (1|Section)+ (1|FishInMesoEnd)+ (Treatment|FishInMesoStart), data=growthdata)
+#notsignifcant anova(lengthmodel2, lengthmodel3)
+lengthmodel4<- lmer(Length ~ Treatment + (1|Rep) + (1|Section)+ (1|FishInMesoEnd)+ (1|FishInMesoStart), data=growthdata)
+#notsignificant anova(lengthmodel3, lengthmodel4)
+lengthmodel5<- lmer(Length ~ Treatment + (1|Rep) + (1|Section)+ (1|FishInMesoEnd), data=growthdata)
+anova(lengthmodel4, lengthmodel5)
+#significant anova(lengthmodel4, lengthmodel5), FishInMesoStart affects model
+lengthmodel6<- lmer(Length ~ Treatment + (1|Rep) + (1|Section)+ (1|FishInMesoStart), data=growthdata)
+anova(lengthmodel4, lengthmodel6)
+#signficant anova(lengthmodel4, lengthmodel6), FishInMesoEnd affects model
+lengthmodel7<- lmer(Length ~ Treatment + (1|Rep) + (1|FishInMesoEnd)+ (1|FishInMesoStart), data=growthdata)
+anova(lengthmodel4, lengthmodel7)
+#significant anova(lengthmodel4, lengthmodel7), Section affects model
+lengthmodel8<- lmer(Length ~ Treatment  + (1|Section)+ (1|FishInMesoEnd)+ (1|FishInMesoStart), data=growthdata)
+#notsignificant anova(lengthmodel4, lengthmodel8)
+lengthmodel9<- lmer(Length ~ 1  + (1|Section)+ (1|FishInMesoEnd)+ (1|FishInMesoStart), data=growthdata)
+anova(lengthmodel8, lengthmodel9)
+#notsignificant anova(lengthmodel8, lengthmodel9), treatment does not affect length
+```
+Embryonic NAFC treatment does not significantly affect larval length (p= 0.1624), but section (p=  0.001661), fish stocking density (p= 0.005376) and fish density at the end (p= 6.224e-05) do. 
+
+
+
+
+
+
+
+
+
+
+
+
