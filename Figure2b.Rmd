@@ -1,0 +1,76 @@
+---
+title: "Figure 2b EmbryoHatchViabilitty"
+output: html_notebook
+---
+
+Loading data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+
+#embryo hatch viability data
+ehatchdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/EmbryoHatchViability1.csv")
+ehatchdata$Rep<- as.factor(ehatchdata$Rep)
+ehatchdata
+```
+
+Checking assumptions for glm analysis:
+
+```{r}
+ehatchmodel<- glm(Viability ~ ï..Treatment, data= ehatchdata, family=binomial)
+plot(ehatchmodel)
+plot(ehatchmodel, 4)
+```
+
+Scale-location and residuals vs leverage plots have horizontal lines, and no residuals are more than 3 cook's distance away. Data looks fairly normal?
+
+
+
+Glmer backwards stepwise regression to test if random effects are significant:
+
+```{r}
+m1<- glmer(Viability~ ï..Treatment + (ï..Treatment|Rep), data= ehatchdata, family=binomial)
+m2<- glmer(Viability~ ï..Treatment + (1|Rep), data= ehatchdata, family=binomial)
+#not significant, anova(m1, m2), no mixed effect between treatment and rep
+m3<- glm(Viability~ ï..Treatment, data= ehatchdata, family=binomial)
+#anova(m2,m3)
+#no significant difference between models, rep does not influence hatch  viability
+summary(m3)
+```
+Embryonic NAFC treatment signficantly affects embryonic hatch viability (p=   <2e-16 ***)
+
+Embryo hatch viability EC50 calculation:
+```{r}
+ehatchmodel<- glm(Viability ~ ï..Treatment, data= ehatchdata, family=binomial)
+dose.p(ehatchmodel, p = c(0.5))
+```
+EC50 for embryo hatch viability is 21.13 mg/L NAFC.
+
+Plotting the glm with EC50:
+```{r}
+range(ehatchdata$ï..Treatment)
+xEHTreatment <- seq(0, 54, 0.01)
+
+```
+
+***As discussed, the below figure could use much improvement. Will make y-axis proportion of hatch viability, and either use bar graph or point graph to represent average proportion of hatches (across 3 reps) for each treatment, then place glm curve with EC50 over top.***
+
+```{r}
+yEHTreatment<- predict(ehatchmodel, list(ï..Treatment = xEHTreatment),type="response")
+plot(ehatchdata$ï..Treatment, ehatchdata$Viability, pch= 16, xlab= "Embryonic NAFC treatment (mg/L)", ylab= "Hatch viability")
+lines(xEHTreatment, yEHTreatment,lwd = 2)
+abline(v= 18.75124, lty= 2, lwd= 1)
+```
+
+
+
+
+
+
+
+
+
+
