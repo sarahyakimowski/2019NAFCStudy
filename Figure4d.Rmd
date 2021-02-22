@@ -1,0 +1,107 @@
+---
+title: "Figure 4d, Time spent in middle"
+output: html_notebook
+---
+
+Explanation for Behaviour tests:
+5 fish from each treatment replicate were placed in a 6 x 6 x 1 cm plastic petri dishes filled with filtered lake water. They were filmed for 120 seconds, then 1mL of a food stimulus (brine shrimp) was added to the test arena, and then the fish were filmed for an addition 120 seconds. 
+^This is labelled in the data set as "Pre" feeding (before food stimulus added) and "Post" feeding (after food stimulus added). 
+About three separate tests per replicate were conducted (Labelled under Video)
+During each test, an individual fish was tracked for 3 behaviour parameters, number of Burst events (sudden increase in velocity), SwimDuration (time (s) the indivudal fish spent in motion during test), and MiddleDuration (time (s) the individual fish spent in the middle of the test arena). 
+
+Loading data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+lburstdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/behavsimple.csv")
+lburstdata$Rep<- as.factor(lburstdata$Rep)
+lburstdata$Video<- as.factor(lburstdata$Video)
+lburstdata
+```
+
+Separating data into pre and post food addition:
+```{r}
+predata<- lburstdata[lburstdata$Feeding == 'Pre', ]
+predata
+  
+postdata<- lburstdata[lburstdata$Feeding == 'Post', ]
+postdata
+```
+
+Testing middle activity endpoint for Post food addition test:
+
+Testing assumptions for middle activity lm:
+```{r}
+postmiddlemodel<- lm(MiddleDuration.s. ~ Treatment, data= postdata)
+plot(postmiddlemodel)
+plot(postmiddlemodel, 4)
+```
+Q-Q plots is straight line, residuals and scale location look good, and no single point has a high cook's distance. I don't think data needs any adjustments but would like to hear your input. 
+
+Backwards stepwise regression to test significance of random factors:
+```{r}
+m1<- lmer(MiddleDuration.s.~ Treatment + (Treatment|Rep), data= postdata)
+m2<- lmer(MiddleDuration.s.~ Treatment + (1|Rep), data= postdata)
+#no significant difference, anova(m1, m2)
+m3<- lm(MiddleDuration.s.~Treatment, data= postdata)
+#no significant difference, anova(m2, m3), Rep does not affect model
+summary(m3)
+```
+NAFC treatment does not significantly affect time spent in middle of arena during behavioural tests (p=0.1206)
+
+
+Graphing Middle duration:
+```{r}
+ggplot(postdata, aes(x=Treatment, y=MiddleDuration.s.))+
+  geom_point()+
+  geom_smooth(method='lm', colour= "black")+
+    ylab('Time spent in center of arena (s)')+ xlab('Embryonic NAFC treatment (mg/L)')+
+  theme_few()
+```
+
+
+Testing middle endpoint for Pre food addition test:
+***Not included in figures**
+
+Testing assumptions for middle activity lm:
+
+```{r}
+premiddlemodel<- lm(MiddleDuration.s. ~ Treatment, data= predata)
+plot(premiddlemodel)
+plot(premiddlemodel, 4)
+```
+Point 95 has a high Cook's distance, going to remove from model:
+
+```{r}
+npredata<- predata[-c(44), ]
+npredata
+```
+Testing assumption of data with points removed:
+
+```{r}
+npreswimmodel<- lm(MiddleDuration.s. ~ Treatment, data= npredata)
+plot(npreswimmodel)
+plot(npreswimmodel, 4)
+```
+**Points 55, 60, and 83 seem to be outliers but their cook's distance is not that large, should I remove these points, or log transform data?**
+
+Backwards stepwise regression to test significance of random factors:
+```{r}
+m4<- lmer(MiddleDuration.s.~ Treatment + (Treatment|Rep), data= npredata)
+m5<- lmer(MiddleDuration.s.~ Treatment + (1|Rep), data= npredata)
+#no significant difference, anova(m4, m5)
+m6<- lm(MiddleDuration.s.~Treatment, data= npredata)
+#no significant difference, anova(m5, m6), Rep does not affect model
+summary(m6)
+```
+***NAFC treatment does not significantly affect larval space use before addition of food stimulus (p=0.9577)
+
+
+
+
+
+
+
