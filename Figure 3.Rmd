@@ -1,0 +1,65 @@
+---
+title: "Figure 3, Embryo malformations"
+output: html_notebook
+---
+
+Information about malformation data:
+
+A subset of embryos were analyzed post-hoc for cardiovascular (pericardial edema, hemorrhaging), craniofacial (reduced head, eye, and jaw growth), myoskeletal (spinal curvatures), and peritoneal (yolk sac edema) malformations using a modified scoring index. Malformations for each index were scored from 0 to 3, where 0 = no observable effect, 1 = mild effect, 2 = moderate effect, and 3 = severe effect, then summed to obtain the overall severity index score per fish (For total severity scores, 0 = no observable effect, 1-4=mild effect, 5-8= moderate effect, and 9-12=severe effect). Blind and double-blind analysis were performed independently by three researchers and the overall severity score was an average of three scores. 
+
+***I'm unsure if linear model is the correct analysis to do on this data, seeing as the severity score has a fixed max of 12 and min of 0. My friend suggested that my data might be multinomial, though I am unsure how to proceed with that analysis. Any suggestions would be appreciated. **
+
+Loading data:
+***X indicates %, i.e. %Cardiovascular malformations
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+emaldata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/EmbryoMalform.csv")
+emaldata$Rep<- as.factor(emaldata$Rep)
+emaldata
+```
+
+
+Checking assumptions of lm for malforms:
+
+```{r}
+emalmodel<- lm(Malform.SI ~ Treatment.mg.L., data= emaldata)
+plot(emalmodel)
+plot(emalmodel, 4)
+```
+Point 16,17,18 seem be an outliers, but those are the entirety of the 21 mg/L treatment, which are important findings, so unsure how to proceed with checking these assumptions, **any help would be appreciated**
+
+Backwards stepwise regression to test significance of random factors:
+
+```{r}
+m1 = lmer(Malform.SI  ~ Treatment.mg.L. + (Treatment.mg.L.|Rep), data= emaldata)
+m2=lmer(Malform.SI  ~ Treatment.mg.L. + (1|Rep), data= emaldata)
+#not significant, anova(m1,m2)
+m3= lm(Malform.SI ~ Treatment.mg.L., data= emaldata)
+#not significant anova(m2,m3), rep does not influence model
+summary(m3)
+```
+Embryonic NAFC treatment significantly affects average malformation SI score (p=0.000377 ***)
+
+
+***Figure 3 for malfortions was made in graphpad**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
