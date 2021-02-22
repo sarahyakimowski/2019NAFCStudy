@@ -1,0 +1,112 @@
+---
+title: "Figure 4c, time spent swimming"
+output: html_notebook
+---
+
+Explanation for Behaviour tests:
+5 fish from each treatment replicate were placed in a 6 x 6 x 1 cm plastic petri dishes filled with filtered lake water. They were filmed for 120 seconds, then 1mL of a food stimulus (brine shrimp) was added to the test arena, and then the fish were filmed for an addition 120 seconds. 
+^This is labelled in the data set as "Pre" feeding (before food stimulus added) and "Post" feeding (after food stimulus added). 
+About three separate tests per replicate were conducted (Labelled under Video)
+During each test, an individual fish was tracked for 3 behaviour parameters, number of Burst events (sudden increase in velocity), SwimDuration (time (s) the indivudal fish spent in motion during test), and MiddleDuration (time (s) the individual fish spent in the middle of the test arena). 
+
+Loading data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+lburstdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/behavsimple.csv")
+lburstdata$Rep<- as.factor(lburstdata$Rep)
+lburstdata$Video<- as.factor(lburstdata$Video)
+lburstdata
+```
+Separating data into pre and post food addition:
+```{r}
+predata<- lburstdata[lburstdata$Feeding == 'Pre', ]
+predata
+  
+postdata<- lburstdata[lburstdata$Feeding == 'Post', ]
+postdata
+```
+
+Testing swim activity endpoint for Post food addition test:
+
+Testing assumptions for swim activity lm:
+```{r}
+postswimmodel<- lm(SwimDuration.s. ~ Treatment, data= postdata)
+plot(postswimmodel)
+plot(postswimmodel, 4)
+```
+
+Point 47 has a large cook's distance and seems to influence normality of data, **should I remove point as outlier, or just log transform data?**
+
+
+
+Backwards stepwise regression to test significance of random factors:
+```{r}
+m1<- lmer(SwimDuration.s.~ Treatment + (Treatment|Rep), data= postdata)
+m2<- lmer(SwimDuration.s.~ Treatment + (1|Rep), data= postdata)
+#no significant difference, anova(m1, m2)
+m3<- lm(SwimDuration.s.~Treatment, data= postdata)
+#no significant difference, anova(m2, m3), Rep does not affect model
+summary(m3)
+```
+Embryonic NAFC exposure significantly affects larval burst activity during behaviour tests (p=  0.028 * )
+
+Graphing linear model:
+```{r}
+ggplot(postdata, aes(x=Treatment, y=SwimDuration.s.))+
+  geom_point()+
+  geom_smooth(method='lm', colour= "black")+
+  ylab('Time spent swimming (s)')+ xlab('Embryonic NAFC treatment (mg/L)')+
+  theme_few()
+```
+
+Testing swim endpoint for Pre food addition test:
+***Not included in figures**
+
+Testing assumptions for swim activity lm:
+
+```{r}
+preswimmodel<- lm(SwimDuration.s. ~ Treatment, data= predata)
+plot(preswimmodel)
+plot(preswimmodel, 4)
+```
+
+Points 58, 95 and 98 have a large cook's distance, going to remove from model:
+
+```{r}
+npredata<- predata[-c(7,44,47), ]
+npredata
+```
+
+Testing assumption of data with points removed:
+
+```{r}
+npreswimmodel<- lm(SwimDuration.s. ~ Treatment, data= npredata)
+plot(npreswimmodel)
+plot(npreswimmodel, 4)
+```
+
+**Should I still log transform data?**
+
+Backwards stepwise regression to test significance of random factors:
+```{r}
+m4<- lmer(SwimDuration.s.~ Treatment + (Treatment|Rep), data= npredata)
+m5<- lmer(SwimDuration.s.~ Treatment + (1|Rep), data= npredata)
+#no significant difference, anova(m4, m5)
+m6<- lm(SwimDuration.s.~Treatment, data= npredata)
+#no significant difference, anova(m5, m6), Rep does not affect model
+summary(m6)
+```
+***NAFC treatment does not significantly affect larval swim activity before addition of food stimulus (p=0.123 )
+
+
+
+
+
+
+
+
+
