@@ -1,0 +1,54 @@
+---
+title: "Figure 2e Embryonic dry mass"
+output: html_notebook
+---
+
+***This graph was not included in manuscript but is reported in results**
+
+Loading data: 
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+emassdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/EmbryoMass.csv")
+emassdata$Rep<- as.factor(emassdata$Rep)
+emassdata
+```
+
+Checking assumptions for lm analysis:
+
+```{r}
+emassmodel<-lm(Mass.embryo.mg. ~ Treatment, data=emassdata)
+plot(emassmodel)
+plot(emassmodel, 4)
+```
+Residuals vs fitted is fairly flat, as is scale location. Normal Q-Q plot follows 1:1 trend for most part, but would be interested on your thoughts if points 11, 12, and 23 may skew normaility too much. No residuals seem to have a cook's distance greater than 3. 
+
+
+lmer backwards stepwise regression to test if random effects are significant:
+
+```{r}
+m1<- lmer(Mass.embryo.mg.~ Treatment + (1|Rep), data= emassdata)
+m2<- lm(Mass.embryo.mg.~ Treatment, data= emassdata)
+#no significant difference between models, rep does not influence hatch  viability
+summary(m2)
+```
+Embryonic mass was not significantly influenced by embryonic NAFC treatment (p=0.0999). 
+
+
+Graphing mass data:
+```{r}
+ggplot(emassdata, aes(x=Treatment, y= Mass.embryo.mg.))+ 
+         geom_point()+
+         geom_smooth(method='lm', colour= "black")+
+  ylab('Embryo mass (mg/L)')+ xlab('Embryonic NAFC treatment (mg/L)')+
+  theme_few()
+
+```
+
+
+
+
+
