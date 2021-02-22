@@ -1,0 +1,60 @@
+---
+title: "Figure 2d EmbryonicTwitches"
+output: html_notebook
+---
+
+```{r}
+#embryo twitches
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+etwitchdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/EmbryoTwitches.csv")
+etwitchdata$Rep<- as.factor(etwitchdata$Rep)
+etwitchdata
+
+```
+
+Checking assumptions for lm analysis:
+
+```{r}
+etwitchmodel<-lm(Twitch ~ ï..Treatment, data=etwitchdata)
+plot(etwitchmodel)
+plot(etwitchmodel, 4)
+```
+***Could use some help making some decisions about these assumptions. For example, the normal Q-Q plot shows mostly normal distribution, with exception of points 57 and 56. Do these points have a far enough away cook's distance to be considered outliers that should be removed from data set? **
+
+lmer backwards stepwise regression to test if random effects are significant:
+
+```{r}
+m1<- lmer(Twitch~ ï..Treatment + (1|Rep), data= etwitchdata)
+m2<- lm(Twitch~ ï..Treatment, data= etwitchdata)
+anova(m1, m2)
+#no significant difference between models, rep does not influence hatch  viability
+summary(m2)
+```
+Embryonic NAFC treatment significantly reduced embryonic heart rate (p=1.68e-09 ***)
+
+Graphing twitch data:
+```{r}
+ggplot(etwitchdata, aes(x=ï..Treatment, y= Twitch))+ 
+         geom_point()+
+         geom_smooth(method='lm', colour= "black")+
+  ylab('Twitches')+ xlab('Embryonic NAFC treatment (mg/L)')+
+  theme_few()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
