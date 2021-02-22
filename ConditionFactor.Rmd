@@ -1,0 +1,74 @@
+---
+title: "Condition factor"
+output: html_notebook
+---
+
+Growth parameter descriptions:
+After embryos were exposed to NAFCs, they were moved to outdoor mesocosms filled with clean lake water and raised in the mesocosms for 1 month. At the end of the month, larvae were removed, measured for wet mass (mg) and measured for length (mm) using photography and ImageJ. Larvae Condition factor was then calculated using Fulton's K formula (K= 100*(W/L^3)). 
+
+Random effects included in lmer model for growth parameters include:
+Section: Where mesocosms were located in outdoor setup (there were 3 sections labelled 1,2,3, see overview sheet for diagram)
+FishInMesoStart: Initial stocking density for individual mesocosms
+FishInMesoEnd: Density of fish in individual mesocosm at end of experiment 
+
+Loading data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+
+growthdata<-read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/aug21growthR.csv")
+growthdata$Rep<- as.factor(growthdata$Rep)
+growthdata$Section<- as.factor(growthdata$Section)
+growthdata
+```
+
+Checking assumptions for CF lm analysis:
+
+```{r}
+CFmodel<- lm(CF ~ Treatment, data= growthdata)
+plot(CFmodel)
+plot(CFmodel, 4)
+```
+I think Q-Q, residuals vs fitted, scale-location, and cook's distance on all points looks good, do not think data needs to be adjusted. 
+
+Using backwards stepwise regression to determing if random effects influence model:
+
+```{r}
+CFmodel<- lmer(CF ~ Treatment + (Treatment|Rep) + (Treatment|Section)+ (Treatment|FishInMesoEnd)+ (Treatment|FishInMesoStart), data=growthdata)
+CFmodel1<- lmer(CF ~ Treatment + (1|Rep) + (Treatment|Section)+ (Treatment|FishInMesoEnd)+ (Treatment|FishInMesoStart), data=growthdata)
+#notsignificant anova(CFmodel, CFmodel1)
+CFmodel2<-lmer(CF ~ Treatment + (1|Rep) + (1|Section)+ (Treatment|FishInMesoEnd)+ (Treatment|FishInMesoStart), data=growthdata)
+#not significant anova(CFmodel1, CFmodel2)
+CFmodel3<- lmer(CF ~ Treatment + (1|Rep) + (1|Section)+ (1|FishInMesoEnd)+ (Treatment|FishInMesoStart), data=growthdata)
+#notsignificant anova(CFmodel2, CFmodel3)
+CFmodel4<- lmer(CF ~ Treatment + (1|Rep) + (1|Section)+ (1|FishInMesoEnd)+ (1|FishInMesoStart), data=growthdata)
+#notsignificant anova(CFmodel3, CFmodel4)
+CFmodel5<- lmer(CF ~ Treatment +  (1|Rep) + (1|Section)+ (1|FishInMesoEnd), data=growthdata)
+anova(CFmodel4, CFmodel5)
+#significant anova(CFmodel4, CFmodel5), FishMesoStart affects model
+CFmodel6<- lmer(CF ~ Treatment + (1|Rep) + (1|Section)+ (1|FishInMesoStart), data=growthdata)
+anova(CFmodel4, CFmodel6)
+#significant anova(CFmodel4, CFmodel6), FishMesoEnd affects model
+CFmodel7<- lmer(CF ~ Treatment + (1|Rep) +  (1|FishInMesoEnd)+ (1|FishInMesoStart), data=growthdata)
+#notsignificant anova(CFmodel4, CFmodel7)
+CFmodel8<- lmer(CF ~ Treatment + (1|FishInMesoEnd)+ (1|FishInMesoStart), data=growthdata)
+anova(CFmodel7, CFmodel8)
+#significant anova(CFmodel7, CFmodel8), Rep affects model
+CFmodel9<- lmer(CF ~ 1 + (1|Rep) +  (1|FishInMesoEnd)+ (1|FishInMesoStart), data=growthdata)
+anova(CFmodel7, CFmodel9)
+#notsignificant! anova(CFmodel7, CFmodel9), Treatment does not affect CF but replicate and fish densities do 
+```
+Embryonic NAFC treatment does not significantly affect larval condition factor (p= 0.2985), but replicate (p= 0.01605*), fish stocking density (p= 0.0002385***) and fish density at the end (p= 2.541e-06***) do. 
+
+
+
+
+
+
+
+
+
+
