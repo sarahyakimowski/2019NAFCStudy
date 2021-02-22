@@ -1,0 +1,73 @@
+---
+title: "Figure 2c heart rate"
+output: html_notebook
+---
+
+Loading data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+#embryo heart rate
+eheartdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/EmbryoHeartbeat.csv")
+eheartdata$Rep<- as.factor(eheartdata$Rep)
+eheartdata
+```
+
+Checking assumptions for lm analysis:
+
+```{r}
+eheartmodel<-lm(Avg.Heartbeat ~ ï..Treatment, data=eheartdata)
+plot(eheartmodel)
+plot(eheartmodel, 4)
+```
+Residuals vs fitted and scale location look fairly flat lined, and normal Q-Q plot looks to follow 1:1 trend. No residuals are more than 3 cooks distance away. 
+
+lmer backwards stepwise regression to test if random effects are significant:
+
+```{r}
+m1<- lmer(Avg.Heartbeat~ ï..Treatment + (1|Rep), data= eheartdata)
+m2<- lm(Avg.Heartbeat~ ï..Treatment, data= eheartdata)
+anova(m1, m2)
+#no significant difference between models, rep does not influence heart beat
+summary(m2)
+```
+Embryonic NAFC treatment significantly affects average embryonic heart rate (p=2.28e-12 ***). 
+
+***dose.p function from MASS package does not work for non-binary data sets, need to figure out a way to calculate IC10 for heart rate using linear model***
+
+Graphing:
+
+Embryo heart rate:
+```{r}
+ggplot(eheartdata, aes(x=ï..Treatment, y= Avg.Heartbeat))+ 
+         geom_point()+
+         geom_smooth(method='lm', colour= "black")+
+  ylab('Heart rate (min)')+ xlab('Embryonic NAFC treatment (mg/L)')+
+  theme_few()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
