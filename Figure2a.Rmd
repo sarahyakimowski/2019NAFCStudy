@@ -1,0 +1,87 @@
+---
+title: "Figure 2a EmbryoMortality"
+output: html_notebook
+---
+
+Loading data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+library(MASS)
+library(drc)
+
+#embryo mortality data
+emortdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/EmbryoMort1.csv")
+emortdata$Rep<- as.factor(emortdata$Rep)
+emortdata
+tail(emortdata)
+```
+
+Checking assumptions for glm analysis:
+
+```{r}
+emortmodel<- glm(Mortality ~ Treatment, data= emortdata, family=binomial)
+plot(emortmodel)
+plot(emortmodel, 4)
+```
+Residuals vs fitted and scale location look fairly flat lined, and normal Q-Q plot looks to follow 1:1 trend. 
+
+***Would love your thoughts and second opinion on checking the assumptions of the data**
+
+Glmer backwards stepwise regression to test if random effects are significant:
+```{r}
+m1<- glmer(Mortality~ Treatment + (Treatment|Rep), data= emortdata, family=binomial)
+m2<- glmer(Mortality~ Treatment + (1|Rep), data= emortdata, family=binomial)
+#anova(m1, m2)
+#not significant, no interaction between treatment and rep
+m3<- glm(Mortality~ Treatment, data= emortdata, family=binomial)
+#anova(m2, m3)
+#not signficant, Rep does not affect model
+summary(m3)
+```
+Treatment significantly affects embryo mortality (p=<2e-16 ***)
+
+
+```{r}
+emortmodel<- glm(Mort ~ ï..Treatment, data= emortdata, family=binomial)
+summary(emortmodel)
+```
+When replicate is taken out of model, NAFC treatment significantly affects embryo mortality (p = 2e-16 ***). 
+
+
+Embryo mortality LC50 calculation:
+
+```{r}
+dose.p(emortmodel, p = c(0.5))
+
+```
+LC50 for embryo mortality is 20.22 mg/L NAFC.
+
+***QUESTION: Is it possible to calculate 95% CI of this LC50 with the SE?*** 
+
+Plotting the glm with LC50:
+```{r}
+range(emortdata$Treatment)
+xETreatment <- seq(0, 53.8, 0.01)
+```
+
+***As discussed, the below figure could use much improvement. Will make y-axis proportion of mortality, and either use bar graph or point graph to represent average proportion of mortality (across 3 reps) for each treatment, then place glm curve with LC50 over top.***
+
+```{r}
+yETreatment<- predict(emortmodel, list(Treatment = xETreatment),type="response")
+plot(emortdata$Treatment, emortdata$Mortality, pch= 16, xlab= "Embryonic NAFC treatment (mg/L)", ylab= "Mortality")
+lines(xETreatment, yETreatment,lwd = 2)
+abline(v= 18.75124, lty= 2, lwd= 1)
+```
+
+
+
+
+
+
+
+
+
