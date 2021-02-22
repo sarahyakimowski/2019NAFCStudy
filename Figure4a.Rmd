@@ -1,0 +1,77 @@
+---
+title: "Figure 4a Larval mortality"
+output: html_notebook
+---
+Loading data.
+Labels:
+Section: Where mesocosms were located in outdoor setup (there were 3 sections labelled 1,2,3, see overview sheet for diagram)
+DeadAlive: Larval mortality, 1= Dead, 0=Alive
+FishInMesoStart: Initial stocking density for individual mesocosms
+FishInMesoEnd: Density of fish in individual mesocosm at end of experiment 
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+lmortdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/mortalityGLM.csv")
+lmortdata$Rep<- as.factor(lmortdata$Rep)
+lmortdata$Section<- as.factor(lmortdata$Section)
+lmortdata
+```
+
+
+Checking assumptions for glm analysis:
+
+```{r}
+lmortmodel<- glm(DeadAlive ~ Treatment, data= lmortdata, family=binomial)
+plot(lmortmodel)
+plot(lmortmodel, 4)
+```
+**Scale location and residuals vs fitted are fairly flat. Normal Q-Q plot does not follow a 1:1 trend, however, unsure how to transform binary data. **
+
+
+Backwards stepwise regression to test significance of random factors:
+```{r}
+m1 = glmer(DeadAlive ~ Treatment + (1|Rep) + (1|Section)+ (1|FishInMesoStart)+ (1|FishInMesoEnd), data= lmortdata, family=binomial)
+m2 = glmer(DeadAlive ~ Treatment + (1|Section)+ (1|FishInMesoStart)+ (1|FishInMesoEnd), data= lmortdata, family=binomial)
+#not significant anova(m1, m2), Rep does not affect model
+m3 = glmer(DeadAlive ~ Treatment + (1|Section)+ (1|FishInMesoStart), data= lmortdata, family=binomial)
+# not significant anova(m2, m3), FishInMesoEnd does not affect model
+m4 = glmer(DeadAlive ~ Treatment + (1|Section), data= lmortdata, family=binomial)
+#not significant anova(m3,m4)m FishInMesoStart does not affect model
+m5=  glm(DeadAlive ~ Treatment , data= lmortdata, family=binomial)
+#notsignificant anova(m4,m5), Section does not affect model
+summary(m5)
+```
+Embryonic NAFC treatment significantly affects larval mortality (p=0.000467 ***)
+
+Larval mortality LC50 calculation:
+
+```{r}
+dose.p(lmortmodel, p = c(0.5))
+
+```
+
+LC50 for larval mortality is 36.72 mg/L
+**Can 95% confidence intervals be calculated using the standard error?**
+
+Plotting glm:
+
+***Will improve this graphs to include proportion of mortality**
+```{r}
+range(lmortdata$Treatment)
+xTreatment <- seq(0, 21, 0.01)
+
+```
+```{r}
+yTreatment<- predict(lmortmodel, list(Treatment = xTreatment),type="response")
+plot(lmortdata$Treatment, lmortdata$DeadAlive, pch= 16, xlab= "Embryonic NAFC treatment (mg/L)", ylab= "Mortality")
+lines(xTreatment, yTreatment, lwd = 2)
+abline(v= 36.72, lty= 2, lwd= 3)
+```
+
+
+
+
+
