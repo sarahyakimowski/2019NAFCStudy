@@ -1,0 +1,103 @@
+---
+title: "Figure 4b, Larval burst events"
+output: html_notebook
+---
+
+
+Explanation for Behaviour tests:
+5 fish from each treatment replicate were placed in a 6 x 6 x 1 cm plastic petri dishes filled with filtered lake water. They were filmed for 120 seconds, then 1mL of a food stimulus (brine shrimp) was added to the test arena, and then the fish were filmed for an addition 120 seconds. 
+^This is labelled in the data set as "Pre" feeding (before food stimulus added) and "Post" feeding (after food stimulus added). 
+About three separate tests per replicate were conducted (Labelled under Video)
+During each test, an individual fish was tracked for 3 behaviour parameters, number of Burst events (sudden increase in velocity), SwimDuration (time (s) the indivudal fish spent in motion during test), and MiddleDuration (time (s) the individual fish spent in the middle of the test arena). 
+
+Loading data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(lme4)
+lburstdata<- read.csv("/Users/jreyn/OneDrive/Documents/grad school/NAFHM19/Data/analysis/behavsimple.csv")
+lburstdata$Rep<- as.factor(lburstdata$Rep)
+lburstdata$Video<- as.factor(lburstdata$Video)
+lburstdata
+```
+
+Separating data into pre and post food addition:
+```{r}
+predata<- lburstdata[lburstdata$Feeding == 'Pre', ]
+predata
+  
+postdata<- lburstdata[lburstdata$Feeding == 'Post', ]
+postdata
+```
+
+Testing burst endpoint for Post food addition test:
+
+Testing assumptions for Burst lm:
+```{r}
+postburstmodel<- lm(Bursts ~ Treatment, data= postdata)
+plot(postburstmodel)
+plot(postburstmodel, 4)
+```
+Residuals vs fitted looks fairly flat, howevr scale location is not flat, meaning data might not be homoscedastic. Residuals vs leverage reveal three potential outliers (45, 48, 49), however they do not have a Cook's distance greater than 0.5. Similarly, data seems mostly normal on Q-Q plot, except for a few points that stray from the line at the end. **Should I transform data or just take out potential outliers?**
+
+
+Backwards stepwise regression to test significance of random factors:
+```{r}
+m1<- lmer(Bursts~ Treatment + (Treatment|Rep), data= postdata)
+m2<- lmer(Bursts~ Treatment + (1|Rep), data= postdata)
+#no significant difference, anova(m1, m2)
+m3<- lm(Bursts~Treatment, data= postdata)
+#no significant difference, anova(m2, m3), Rep does not affect model
+summary(m3)
+```
+Embryonic NAFC exposure significantly affects larval burst activity during behaviour tests (p= 0.00683 **)
+
+Graphing:
+```{r}
+ggplot(postdata, aes(x=Treatment, y=Bursts))+
+  geom_point()+
+  geom_smooth(method='lm', colour= "black")+ ylab('Bursts events')+ xlab('Embryonic NAFC treatment (mg/L)')+ theme_few()
+```
+
+Testing burst endpoint for Pre food addition test:
+***Not included in figures**
+
+Testing assumptions for Burst lm:
+
+```{r}
+preburstmodel<- lm(Bursts ~ Treatment, data= predata)
+plot(preburstmodel)
+plot(preburstmodel, 4)
+```
+Residuals vs leverage and scale- location are fairly straight line, and no points seem to have a high Cook's number. However normal Q-Q shows data is not normal, **should I do a log transformation?**
+
+Backwards stepwise regression to test significance of random factors:
+```{r}
+m4<- lmer(Bursts~ Treatment + (Treatment|Rep), data= predata)
+m5<- lmer(Bursts~ Treatment + (1|Rep), data= predata)
+#no significant difference, anova(m4, m5)
+m6<- lm(Bursts~Treatment, data= predata)
+#no significant difference, anova(m5, m6), Rep does not affect model
+summary(m6)
+```
+NAFC treatment has no significant affect on larval burst activity BEFORE addition of food stimulus during behaviour tests (p=0.4194 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
