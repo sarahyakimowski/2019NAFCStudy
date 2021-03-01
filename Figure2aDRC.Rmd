@@ -75,6 +75,8 @@ xlab("NAFC treatment (mg/L)") + ylab("Proportion of mortality") + theme_few()
 
 
 
+# This figure looks great!  For the y axis label the 'of' seems not quite right - perhaps just 'Proportion mortality' or 'Proportion embryo mortality'? 
+# Also need to add more labels on the x - axas between 0 and 20
 
 
 
